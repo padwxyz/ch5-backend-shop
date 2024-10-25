@@ -1,8 +1,27 @@
 const { Users } = require("../models");
+const { Op } = require("sequelize");
 
 const findUsers = async (req, res, next) => {
   try {
-    const users = await Users.findAll();
+    const { name, age, address, limit, page } = req.query;
+
+    const condition = {};
+    if (name) condition.name = { [Op.iLike]: `%${name}%` };
+    if (age) condition.age = { [Op.gte]: age };
+    if (address) condition.address = { [Op.iLike]: address };
+
+    let limitPage = 3;
+    if (limit) limitPage = limit;
+
+    let pageNumber = 0
+    if (page) pageNumber = (page * limitPage) - limitPage
+
+    const users = await Users.findAll({
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+      where: condition,
+      limit: limitPage,
+      offset: pageNumber
+    });
 
     res.status(200).json({
       status: "Success",
@@ -10,7 +29,7 @@ const findUsers = async (req, res, next) => {
         users,
       },
     });
-  } catch (err) {}
+  } catch (err) { }
 };
 
 const findUserById = async (req, res, next) => {
@@ -27,7 +46,7 @@ const findUserById = async (req, res, next) => {
         user,
       },
     });
-  } catch (err) {}
+  } catch (err) { }
 };
 
 const updateUser = async (req, res, next) => {
@@ -52,7 +71,7 @@ const updateUser = async (req, res, next) => {
       status: "Success",
       message: "sukses update user",
     });
-  } catch (err) {}
+  } catch (err) { }
 };
 
 const deleteUser = async (req, res, next) => {
@@ -73,7 +92,7 @@ const deleteUser = async (req, res, next) => {
       status: "Success",
       message: "sukses delete user",
     });
-  } catch (err) {}
+  } catch (err) { }
 };
 
 module.exports = {

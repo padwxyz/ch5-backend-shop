@@ -1,6 +1,5 @@
-const { where } = require("sequelize");
 const { Shops, Products, Users } = require("../models");
-const { Op } = require("sequelize")
+const { Op } = require("sequelize");
 
 const createShop = async (req, res) => {
   const { name, adminEmail, userId } = req.body;
@@ -51,7 +50,7 @@ const createShop = async (req, res) => {
 
 const getAllShop = async (req, res) => {
   try {
-    const { shopName, adminEmail, productName, stock } = req.query;
+    const { shopName, adminEmail, productName, stock, limit, page } = req.query;
 
     const condition = {};
     if(shopName) condition.name = { [Op.iLike]: `%${shopName}%`};
@@ -59,6 +58,12 @@ const getAllShop = async (req, res) => {
     const productCondition = {};
     if(productName) productCondition.name = { [Op.iLike]: `%${productName}%`};
     if(stock) productCondition.stock = stock;
+
+    let limitPage = 3;
+    if(limit) limitPage = limit;
+
+    let pageNumber = 0
+    if(page) pageNumber = (page*limitPage) - limitPage
 
     const shops = await Shops.findAll({
       include: [
@@ -75,7 +80,9 @@ const getAllShop = async (req, res) => {
         },
       ],
       attributes: ["name", "adminEmail"],
-      where: condition
+      where: condition,
+      limit: limitPage,
+      offset: pageNumber
     });
 
     const totalData = shops.length;

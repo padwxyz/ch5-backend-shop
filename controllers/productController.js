@@ -1,4 +1,5 @@
 const { Products, Shops } = require("../models");
+const { Op } = require("sequelize")
 
 const createProduct = async (req, res) => {
   const { name, stock, price, shopId } = req.body;
@@ -49,13 +50,34 @@ const createProduct = async (req, res) => {
 
 const getAllProduct = async (req, res) => {
   try {
+    const { shopName, productName, stock, price, limit, page } = req.query;
+
+    const condition = {};
+    if (productName) condition.name = { [Op.iLike]: `%${productName}%` };
+    if (stock) condition.stock = { [Op.gte]: stock };
+    if (price) condition.price = { [Op.lte]: price };
+
+    const shopCondition = {};
+    if (shopName) shopCondition.name = { [Op.iLike]: `%${shopName}%` };
+
+    let limitPage = 3;
+    if (limit) limitPage = limit;
+
+    let pageNumber = 0
+    if (page) pageNumber = (page * limitPage) - limitPage
+
     const products = await Products.findAll({
       include: [
         {
           model: Shops,
           as: "shop",
+          attributes: ["name"],
+          where: shopCondition
         },
       ],
+      where: condition,
+      limit: limitPage,
+      offset: pageNumber
     });
 
     res.status(200).json({
